@@ -88,15 +88,7 @@ export async function sendMail({ to, subject, html }: SendMailProps) {
 }
 
 export function generatePasswordResetEmail(resetToken: string) {
-  const baseUrl = process.env.VERCEL_URL;
-  if (!baseUrl) {
-    throw new Error("VERCEL_URL environment variable is not set");
-  }
-
-  const resetUrl = `${baseUrl.replace(
-    /\/$/,
-    ""
-  )}/reset-password?token=${resetToken}`;
+  const resetUrl = `https://bustracker-pi.vercel.app/reset-password?token=${resetToken}`;
 
   return `
     <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; background-color: #f9fafb; border-radius: 8px;">
