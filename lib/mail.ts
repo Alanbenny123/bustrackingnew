@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer";
 
 // Create reusable transporter object using SMTP transport
 const transporter = nodemailer.createTransport({
@@ -10,7 +10,7 @@ const transporter = nodemailer.createTransport({
     pass: process.env.SMTP_PASSWORD,
   },
   debug: true, // Show debug output
-  logger: true // Log information into console
+  logger: true, // Log information into console
 });
 
 interface SendMailProps {
@@ -29,12 +29,12 @@ interface EmailError {
 export async function sendMail({ to, subject, html }: SendMailProps) {
   try {
     // Verify SMTP connection configuration
-    console.log('Verifying SMTP connection...');
+    console.log("Verifying SMTP connection...");
     const verification = await transporter.verify();
-    console.log('SMTP Connection verified:', verification);
+    console.log("SMTP Connection verified:", verification);
 
     // Log email configuration (without sensitive data)
-    console.log('Attempting to send email with config:', {
+    console.log("Attempting to send email with config:", {
       host: process.env.SMTP_HOST,
       port: process.env.SMTP_PORT,
       secure: process.env.SMTP_SECURE,
@@ -43,7 +43,7 @@ export async function sendMail({ to, subject, html }: SendMailProps) {
       auth: {
         user: process.env.SMTP_USER,
         // Not logging password for security
-      }
+      },
     });
 
     const info = await transporter.sendMail({
@@ -53,18 +53,18 @@ export async function sendMail({ to, subject, html }: SendMailProps) {
       html,
     });
 
-    console.log('Message sent successfully:', {
+    console.log("Message sent successfully:", {
       messageId: info.messageId,
       response: info.response,
       accepted: info.accepted,
       rejected: info.rejected,
     });
-    
+
     return { success: true };
   } catch (error) {
     // Enhanced error logging
     const emailError = error as EmailError;
-    console.error('Detailed email error:', {
+    console.error("Detailed email error:", {
       error: emailError.message,
       code: emailError.code,
       command: emailError.command,
@@ -73,7 +73,7 @@ export async function sendMail({ to, subject, html }: SendMailProps) {
     });
 
     // Log environment variables (without sensitive data)
-    console.log('Environment variables check:', {
+    console.log("Environment variables check:", {
       SMTP_HOST: !!process.env.SMTP_HOST,
       SMTP_PORT: !!process.env.SMTP_PORT,
       SMTP_SECURE: !!process.env.SMTP_SECURE,
@@ -88,12 +88,15 @@ export async function sendMail({ to, subject, html }: SendMailProps) {
 }
 
 export function generatePasswordResetEmail(resetToken: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+  const baseUrl = process.env.VERCEL_URL;
   if (!baseUrl) {
-    throw new Error('NEXT_PUBLIC_APP_URL environment variable is not set');
+    throw new Error("VERCEL_URL environment variable is not set");
   }
-  
-  const resetUrl = `${baseUrl.replace(/\/$/, '')}/reset-password?token=${resetToken}`;
+
+  const resetUrl = `${baseUrl.replace(
+    /\/$/,
+    ""
+  )}/reset-password?token=${resetToken}`;
 
   return `
     <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; background-color: #f9fafb; border-radius: 8px;">
@@ -114,4 +117,4 @@ export function generatePasswordResetEmail(resetToken: string) {
       </div>
     </div>
   `;
-} 
+}
