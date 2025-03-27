@@ -3,9 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import DriverAvatar from "@/components/ui/DriverAvatar";
-import io from "socket.io-client";
-import { useEffect } from "react";
-import { useSession, signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 // Types
 interface Driver {
@@ -50,20 +48,9 @@ const fetchDrivers = async (): Promise<Driver[]> => {
   return initialDrivers;
 };
 
-const SOCKET_UPDATE_INTERVAL = 5000; // 5 seconds
-
 export default function DriversPage() {
-  const { data: session, status } = useSession({
-    required: true,
-    onUnauthenticated() {
-      signIn("github", { callbackUrl: "/dashboard/drivers" });
-    },
-  });
-
+  const router = useRouter();
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
-  const [driverLocations, setDriverLocations] = useState<
-    Record<string, { latitude: number; longitude: number }>
-  >({});
 
   // Query for drivers data with caching
   const {
@@ -76,75 +63,6 @@ export default function DriversPage() {
     staleTime: 60000, // Consider data fresh for 1 minute
     gcTime: 3600000, // Cache for 1 hour
   });
-
-  // Socket connection with optimized updates
-  useEffect(() => {
-    if (!session) return;
-
-    const newSocket = io("http://localhost:3000", {
-      transports: ["websocket"],
-      upgrade: false,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: 5,
-      auth: {
-        token: session.user?.email,
-      },
-    });
-
-    let locationUpdates: Record<
-      string,
-      { latitude: number; longitude: number }
-    > = {};
-    let updateTimeout: NodeJS.Timeout;
-
-    // Batch location updates
-    const processLocationUpdates = () => {
-      if (Object.keys(locationUpdates).length > 0) {
-        setDriverLocations((prev) => ({ ...prev, ...locationUpdates }));
-        locationUpdates = {};
-      }
-      updateTimeout = setTimeout(
-        processLocationUpdates,
-        SOCKET_UPDATE_INTERVAL
-      );
-    };
-
-    newSocket.on(
-      "receiveLocation",
-      (data: { id: string; latitude: number; longitude: number }) => {
-        locationUpdates[data.id] = {
-          latitude: data.latitude,
-          longitude: data.longitude,
-        };
-      }
-    );
-
-    newSocket.on("connect_error", (error: Error) => {
-      console.error("Socket connection error:", error);
-    });
-
-    updateTimeout = setTimeout(processLocationUpdates, SOCKET_UPDATE_INTERVAL);
-
-    return () => {
-      clearTimeout(updateTimeout);
-      newSocket.disconnect();
-    };
-  }, [session]);
-
-  // Show loading state while session is loading
-  if (status === "loading") {
-    return (
-      <div className="py-6">
-        <div className="mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // Loading states
   if (isLoading) {
@@ -179,7 +97,7 @@ export default function DriversPage() {
                 : "An error occurred while loading the drivers."}
             </p>
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => router.refresh()}
               className="mt-3 text-sm font-medium text-red-800 dark:text-red-200 hover:text-red-600 dark:hover:text-red-400"
             >
               Try again
@@ -213,7 +131,6 @@ export default function DriversPage() {
               </h2>
               <div className="space-y-4">
                 {drivers.map((driver) => {
-                  const location = driverLocations[driver.id];
                   const isOnline = !!location;
 
                   return (
@@ -268,11 +185,7 @@ export default function DriversPage() {
                       className="mb-6"
                     />
                     <span
-                      className={`absolute bottom-6 right-0 block h-6 w-6 rounded-full ring-4 ring-white ${
-                        driverLocations[selectedDriver.id]
-                          ? "bg-green-400"
-                          : "bg-gray-400"
-                      }`}
+                      className={"absolute bottom-6 right-0 block h-6 w-6 rounded-full ring-4 ring-white bg-gray-400"}
                     />
                   </div>
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
@@ -318,27 +231,6 @@ export default function DriversPage() {
                         {selectedDriver.numberPlate}
                       </p>
                     </div>
-
-                    {driverLocations[selectedDriver.id] && (
-                      <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Current Location
-                        </p>
-                        <p className="text-lg font-medium text-gray-900 dark:text-white">
-                          Lat:{" "}
-                          {driverLocations[selectedDriver.id].latitude.toFixed(
-                            6
-                          )}
-                          , Long:{" "}
-                          {driverLocations[selectedDriver.id].longitude.toFixed(
-                            6
-                          )}
-                        </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                          Last update: {new Date().toLocaleTimeString()}
-                        </p>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>

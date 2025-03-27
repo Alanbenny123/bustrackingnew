@@ -1,8 +1,8 @@
 // Map configuration constants
-export const KERALA_CENTER: [number, number] = [10.2, 76.4];
+export const KERALA_CENTER: [number, number] = [10.177686162000652, 76.43159471152298];
 export const KERALA_BOUNDS: [[number, number], [number, number]] = [
-  [8.5, 74.5],
-  [12.5, 77.5],
+  [8.0, 74.0],
+  [17.0, 84.0],
 ];
 export const ADI_SHANKARA_POSITION: [number, number] = [
   10.177686162000652, 76.43159471152298,

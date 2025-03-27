@@ -8,106 +8,103 @@ import {
   Popup,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import L from "leaflet";
-import { useEffect, useState } from "react";
+import { icon, type LatLngExpression } from "leaflet";
 import { useTheme } from "next-themes";
+import { useDeviceLocation } from "@/hooks/useDeviceLocation";
+import { useEffect, useState } from "react";
 
-// Fix for default marker icons in Next.js
-const defaultIcon = L.icon({
-  iconUrl: "/images/marker-icon.png",
-  iconRetinaUrl: "/images/marker-icon-2x.png",
-  shadowUrl: "/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
-L.Marker.prototype.options.icon = defaultIcon;
-
-interface RouteMapProps {
-  coordinates: [number, number][];
-  currentLocation?: { latitude: number; longitude: number };
+export interface MarkerData {
+  position: LatLngExpression;
+  title: string;
+  type: 'start' | 'end';
 }
 
-export default function RouteMap({
-  coordinates,
-  currentLocation,
-}: RouteMapProps) {
+interface RouteMapProps {
+  coordinates: number[][];
+  markers?: MarkerData[];
+}
+
+const busIcon = icon({
+  iconUrl: "/bus.png",
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+});
+
+const userIcon = icon({
+  iconUrl: "/user-icon.svg",
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+  popupAnchor: [0, -16]
+});
+
+const startIcon = icon({
+  iconUrl: "/start-marker.png",
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -32]
+});
+
+const endIcon = icon({
+  iconUrl: "/end-marker.png",
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -32]
+});
+
+export default function RouteMap({ coordinates, markers }: RouteMapProps) {
   const { theme } = useTheme();
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const center = coordinates[0] || [10.1777434, 76.4299632];
-
-  // Dark mode map style
-  const mapStyle =
-    theme === "dark"
-      ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-      : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-
-  const mapAttribution =
-    theme === "dark"
-      ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-      : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+  const { latitude, longitude } = useDeviceLocation({
+    enableHighAccuracy: true,
+    maximumAge: 1000,
+    timeout: 5000
+  });
+  const [currentBusLocation, setCurrentBusLocation] = useState(coordinates[0]);
 
   useEffect(() => {
-    const loadMap = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        // Simulate map loading time
-        await new Promise((resolve) => setTimeout(resolve, 500));
-      } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
-          return;
-        }
-        setError("Failed to load map. Please try again.");
-      } finally {
-        setIsLoading(false);
+    let position = 1;
+    const timer = setInterval(() => {
+      if (position >= coordinates.length) {
+        clearInterval(timer);
+        return
       }
-    };
+      setCurrentBusLocation(coordinates[position]);
+      position++;
+    }, 500);
 
-    loadMap();
-  }, []);
+    return () => clearInterval(timer);
+  }, [coordinates])
 
-  if (isLoading) {
-    return (
-      <div className="h-[400px] w-full bg-gray-100 dark:bg-gray-700 rounded-lg animate-pulse flex items-center justify-center">
-        <div className="text-gray-500 dark:text-gray-400">Loading map...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="h-[400px] w-full bg-red-50 dark:bg-red-900 rounded-lg flex items-center justify-center">
-        <div className="text-red-600 dark:text-red-200">{error}</div>
-      </div>
-    );
-  }
+  const center = coordinates[0] || [10.0261, 76.3125];
+  const isDark = theme === "dark";
 
   return (
     <MapContainer
-      center={center}
+      center={{lat: center[0], lng: center[1]}}
       zoom={13}
-      style={{ height: "100%", width: "100%", borderRadius: "0.5rem" }}
-      className={theme === "dark" ? "map-dark" : ""}
+      style={{
+        height: "100%",
+        width: "100%",
+        background: isDark ? "#1a1b1e" : "#ffffff",
+      }}
     >
-      <TileLayer url={mapStyle} attribution={mapAttribution} />
-      <Polyline
-        positions={coordinates}
-        color={theme === "dark" ? "#818cf8" : "#4F46E5"}
-        weight={4}
-        opacity={0.8}
+      <TileLayer
+        url={
+          isDark
+            ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        }
       />
-      {currentLocation && (
-        <Marker
-          position={[currentLocation.latitude, currentLocation.longitude]}
-        >
+      <Polyline
+        positions={coordinates.map(coord => ({lat: coord[0], lng: coord[1]}))}
+        pathOptions={{
+          color: isDark ? "#60a5fa" : "#3b82f6",
+          opacity: isDark ? 0.7 : 1,
+        }}
+      />
+        <Marker position={{lat: currentBusLocation[0], lng: currentBusLocation[1]}} icon={busIcon}>
           <Popup>
-            <div className={theme === "dark" ? "text-white" : "text-gray-900"}>
-              Current Bus Location
+            <div className={isDark ? "text-white" : "text-gray-900"}>
+              Bus Location
               <br />
               <span className="text-sm text-gray-500">
                 Last updated: {new Date().toLocaleTimeString()}
@@ -115,7 +112,37 @@ export default function RouteMap({
             </div>
           </Popup>
         </Marker>
+      {latitude && longitude && (
+        <Marker position={[latitude, longitude]} icon={userIcon}>
+          <Popup>
+            <div className={isDark ? "text-white" : "text-gray-900"}>
+              Your Location
+              <br />
+              <span className="text-sm text-gray-500">
+                Last updated: {new Date().toLocaleTimeString()}
+              </span>
+              <br />
+              <span className="text-xs text-gray-400">
+                {latitude.toFixed(6)}, {longitude.toFixed(6)}
+              </span>
+            </div>
+          </Popup>
+        </Marker>
       )}
+      {/* Render markers */}
+      {markers?.map((marker, index) => (
+        <Marker
+          key={`${marker.type}-${index}`}
+          position={marker.position}
+          icon={marker.type === 'start' ? startIcon : endIcon}
+        >
+          <Popup>
+            <div className={isDark ? "text-white" : "text-gray-900"}>
+              {marker.title}
+            </div>
+          </Popup>
+        </Marker>
+      ))}
     </MapContainer>
   );
 }

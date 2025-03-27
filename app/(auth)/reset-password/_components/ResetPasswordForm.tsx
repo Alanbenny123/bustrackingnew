@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import { object, string, pipe, minLength } from "valibot";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import PasswordInput from "@/components/ui/PasswordInput";
 
 const resetPasswordSchema = object({
@@ -22,10 +22,12 @@ type ResetPasswordFormData = {
   confirmPassword: string;
 };
 
-export default function ResetPasswordForm() {
+type Props = {
+  token: string;
+};
+
+export default function ResetPasswordForm({ token }: Props) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const token = searchParams.get("token");
 
   const {
     register,

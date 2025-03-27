@@ -53,7 +53,7 @@ export default async function ResetPassword({ searchParams }: Props) {
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-[480px]">
           <div className="bg-white px-6 py-12 shadow sm:rounded-lg sm:px-12">
-            <ResetPasswordForm />
+            <ResetPasswordForm token={token} />
           </div>
         </div>
       </div>

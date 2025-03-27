@@ -17,8 +17,8 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} min-h-screen`}>
         <Providers>{children}</Providers>
       </body>
     </html>
