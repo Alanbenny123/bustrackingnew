@@ -105,7 +105,7 @@ export default function Chatbot() {
       ) : (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-96 max-h-[600px] flex flex-col">
           <div className="p-4 bg-indigo-600 dark:bg-indigo-800 text-white rounded-t-lg flex justify-between items-center">
-            <h3 className="font-semibold">Bus Tracking Assistant</h3>
+            <h3 className="font-semibold">Chat Assistantce</h3>
             <button
               onClick={() => setIsOpen(false)}
               className="text-white hover:text-gray-200"
