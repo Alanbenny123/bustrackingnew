@@ -31,7 +31,7 @@ const busIcon = icon({
 });
 
 const userIcon = icon({
-  iconUrl: "/user-icon.svg",
+  iconUrl: "/student.png",
   iconSize: [32, 32],
   iconAnchor: [16, 16],
   popupAnchor: [0, -16]
